@@ -1,5 +1,5 @@
-import efficientnet as efn
-import keras
+from tensorflow import keras
+import efficientnet.tfkeras as efn 
 import numpy as np
 from utils import softmax
 
