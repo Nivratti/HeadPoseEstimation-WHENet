@@ -4,41 +4,15 @@ from whenet import WHENet
 from utils import draw_axis
 import os
 import argparse
-from yolo_v3.yolo_postprocess import YOLO
 from PIL import Image
-
-
-def process_detection( model, img, bbox, args ):
-
-    y_min, x_min, y_max, x_max = bbox
-    # enlarge the bbox to include more background margin
-    y_min = max(0, y_min - abs(y_min - y_max) / 10)
-    y_max = min(img.shape[0], y_max + abs(y_min - y_max) / 10)
-    x_min = max(0, x_min - abs(x_min - x_max) / 5)
-    x_max = min(img.shape[1], x_max + abs(x_min - x_max) / 5)
-    x_max = min(x_max, img.shape[1])
-
-    img_rgb = img[int(y_min):int(y_max), int(x_min):int(x_max)]
-    img_rgb = cv2.cvtColor(img_rgb, cv2.COLOR_BGR2RGB)
-    img_rgb = cv2.resize(img_rgb, (224, 224))
-    img_rgb = np.expand_dims(img_rgb, axis=0)
-
-    cv2.rectangle(img, (int(x_min), int(y_min)), (int(x_max), int(y_max)), (0,0,0), 2)
-    yaw, pitch, roll = model.get_angle(img_rgb)
-    yaw, pitch, roll = np.squeeze([yaw, pitch, roll])
-    draw_axis(img, yaw, pitch, roll, tdx=(x_min+x_max)/2, tdy=(y_min+y_max)/2, size = abs(x_max-x_min)//2 )
-
-    if args.display == 'full':
-        cv2.putText(img, "yaw: {}".format(np.round(yaw)), (int(x_min), int(y_min)), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (100, 255, 0), 1)
-        cv2.putText(img, "pitch: {}".format(np.round(pitch)), (int(x_min), int(y_min) - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (100, 255, 0), 1)
-        cv2.putText(img, "roll: {}".format(np.round(roll)), (int(x_min), int(y_min)-30), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (100, 255, 0), 1)
-    return img
-
-
+from demo import process_detection
 
 def main(args):
+    from loguru import logger
+    from face_detection import FaceDetection_RetinaFaceTF2
+
     whenet = WHENet(snapshot=args.snapshot)
-    yolo = YOLO(**vars(args))
+
     VIDEO_SRC = 0 if args.video == '' else args.video # if video clip is passed, use web cam
     cap = cv2.VideoCapture(VIDEO_SRC)
     print('cap info',VIDEO_SRC)
@@ -46,18 +20,33 @@ def main(args):
     fourcc = cv2.VideoWriter_fourcc(*'MJPG')
     out = cv2.VideoWriter(args.output, fourcc, 30, (frame.shape[1], frame.shape[0]))  # write the result to a video
 
+    face_detector = FaceDetection_RetinaFaceTF2()
+    logger.info("Success! Initialized face detector..")
+    
     while True:
         try:
             ret, frame = cap.read()
         except:
             break
-        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        img_pil = Image.fromarray(frame_rgb)
-        bboxes, scores, classes = yolo.detect(img_pil)
+
+        image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+        faces, result_img = face_detector.detect_highlight_face(image_rgb, max_side_len=640)
+
+        logger.info(f"Total faces: {len(faces)}")
+        # logger.info(f"faces: {faces}")
+
+        bboxes = []
+        for face in faces:
+            bbox = [faces[0]["x1"], faces[0]["y1"], faces[0]["x2"], faces[0]["y2"]]
+            bboxes.append(bbox)
+
+        ## Detect
         for bbox in bboxes:
-            frame = process_detection(whenet, frame, bbox, args)
-        cv2.imshow('output',frame)
-        out.write(frame)
+            out_img, yaw, pitch, roll = process_detection(whenet, frame, bbox, args)
+
+        cv2.imshow('output', out_img)
+        out.write(out_img)
         key = cv2.waitKey(1) & 0xFF
         if key == ord("q"):
             break
