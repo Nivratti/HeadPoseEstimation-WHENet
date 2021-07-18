@@ -1,7 +1,13 @@
 import numpy as np
 import cv2
-from whenet import WHENet
-from utils import draw_axis
+
+try:
+    from whenet import WHENet
+    from utils import draw_axis
+except Exception as e:
+    from HeadPoseEstimation_WHENet.whenet import WHENet
+    from HeadPoseEstimation_WHENet.utils import draw_axis
+
 
 def process_detection( model, img_bgr, bbox, is_draw_axis=True, display_all_euler_angle="full"):
 
