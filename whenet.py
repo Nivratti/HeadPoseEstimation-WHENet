@@ -1,8 +1,13 @@
 from tensorflow import keras
 import efficientnet.tfkeras as efn 
 import numpy as np
-from utils import softmax
 
+try:
+    from utils import softmax
+except Exception as e:
+    from HeadPoseEstimation_WHENet.utils import softmax
+
+    
 class WHENet:
     def __init__(self, snapshot=None):
         base_model = efn.EfficientNetB0(include_top=False, input_shape=(224, 224, 3))
