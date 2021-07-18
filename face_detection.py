@@ -3,6 +3,7 @@ import cv2
 import imutils
 from retinaface import RetinaFace
 
+
 class FaceDetection_RetinaFaceTF2:
     def __init__(self, quality="normal"):
         self.face_detector = RetinaFace(quality=quality)
@@ -24,7 +25,7 @@ class FaceDetection_RetinaFaceTF2:
                 scale_factor = max_side_len / width
                 resized = imutils.resize(rgb_image, width=max_side_len)
 
-            logger.info(f"scale_factor: {scale_factor}")
+            # logger.info(f"scale_factor: {scale_factor}")
             # tn_image = resize((int(width * scale_factor), int(height * scale_factor)))
 
         if scale_factor:
