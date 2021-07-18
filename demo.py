@@ -59,9 +59,8 @@ def main(args):
     logger.info(f"Total faces: {len(faces)}")
     # logger.info(f"faces: {faces}")
 
-    bboxes = []
-    for face in faces:
-        bbox = [faces[0]["x1"], faces[0]["y1"], faces[0]["x2"], faces[0]["y2"]]
+    for idx, face in enumerate(faces):
+        bbox = [faces[idx]["x1"], faces[idx]["y1"], faces[idx]["x2"], faces[idx]["y2"]]
         bboxes.append(bbox)
 
     ## Detect
