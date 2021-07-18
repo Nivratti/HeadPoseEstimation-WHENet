@@ -1,7 +1,5 @@
 import numpy as np
 import cv2
-from whenet import WHENet
-from utils import draw_axis
 import os
 import argparse
 from PIL import Image
